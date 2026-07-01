@@ -404,23 +404,8 @@ footer{border-top:1px solid var(--line);padding:44px 6%;display:flex;justify-con
   <div>© 2026 Aura Applications — todos os direitos reservados</div>
 </footer>
 
-<script type="module">
-// ===== FIREBASE =====
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getFirestore, doc, getDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-
-const firebaseConfig = {
-  apiKey: "AIzaSyCfux94IsnXM2cUxLYN_YrDI2vlhIc1-Yw",
-  authDomain: "aura-applications-afd15.firebaseapp.com",
-  projectId: "aura-applications-afd15",
-  storageBucket: "aura-applications-afd15.firebasestorage.app",
-  messagingSenderId: "665233735729",
-  appId: "1:665233735729:web:6b781ad6763444c1ad1510"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
+<script>
+// ===== FIREBASE (import dinâmico) =====
 const DEFAULT_PLANS=[
   {id:1,name:"Básico",price:"0",period:"/mês",desc:"Para quem está começando na comunidade.",features:["Acesso aos canais gerais","Participação em eventos abertos","Suporte padrão"],featured:false,badge:"Mais popular",btnText:"Começar grátis",btnUrl:"#",image:""},
   {id:2,name:"Plus",price:"19",period:"/mês",desc:"O plano mais escolhido pela comunidade.",features:["Tudo do plano Básico","Cargo exclusivo no servidor","Acesso a canais reservados","Suporte prioritário"],featured:true,badge:"Mais popular",btnText:"Assinar Plus",btnUrl:"#",image:""},
@@ -596,6 +581,27 @@ window.copyPixKey=copyPixKey;
 
 renderPlansData(DEFAULT_PLANS); // fallback visual imediato
 updateNavAuth();
+
+// Inicia Firebase e atualiza planos em tempo real
+(async function(){
+  try{
+    const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+    const { getFirestore, doc, onSnapshot } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    const app = initializeApp({
+      apiKey:"AIzaSyCfux94IsnXM2cUxLYN_YrDI2vlhIc1-Yw",
+      authDomain:"aura-applications-afd15.firebaseapp.com",
+      projectId:"aura-applications-afd15",
+      storageBucket:"aura-applications-afd15.firebasestorage.app",
+      messagingSenderId:"665233735729",
+      appId:"1:665233735729:web:6b781ad6763444c1ad1510"
+    });
+    const db = getFirestore(app);
+    onSnapshot(doc(db,'site','plans'), snap=>{
+      const data = snap.exists() ? snap.data().list : null;
+      renderPlansData(data && data.length ? data : DEFAULT_PLANS);
+    });
+  }catch(e){ console.warn('Firebase error',e); }
+})();
 </script>
 </body>
 </html>

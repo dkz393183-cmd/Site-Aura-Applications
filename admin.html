@@ -307,31 +307,45 @@ a{color:inherit;text-decoration:none;}
   </div>
 </div>
 
-<script type="module">
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getFirestore, doc, getDoc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-
-const firebaseConfig = {
-  apiKey: "AIzaSyCfux94IsnXM2cUxLYN_YrDI2vlhIc1-Yw",
-  authDomain: "aura-applications-afd15.firebaseapp.com",
-  projectId: "aura-applications-afd15",
-  storageBucket: "aura-applications-afd15.firebasestorage.app",
-  messagingSenderId: "665233735729",
-  appId: "1:665233735729:web:6b781ad6763444c1ad1510"
-};
-
-const fbApp = initializeApp(firebaseConfig);
-const db = getFirestore(fbApp);
-const plansRef = doc(db, 'site', 'plans');
-
-// ===== ADMIN PASSWORD =====
+<script>
+// ===== FIREBASE (import dinâmico — sem type=module, sem quebrar onclick) =====
 const DEFAULT_ADMIN_PASS = 'aura2026';
-function getAdminPass(){return localStorage.getItem('aura_admin_pass')||DEFAULT_ADMIN_PASS;}
+const DEFAULT_PLANS = [
+  {id:1,name:"Básico",price:"0",period:"/mês",desc:"Para quem está começando na comunidade.",features:["Acesso aos canais gerais","Participação em eventos abertos","Suporte padrão"],featured:false,badge:"Mais popular",btnText:"Começar grátis",btnUrl:"#",image:""},
+  {id:2,name:"Plus",price:"19",period:"/mês",desc:"O plano mais escolhido pela comunidade.",features:["Tudo do plano Básico","Cargo exclusivo no servidor","Acesso a canais reservados","Suporte prioritário"],featured:true,badge:"Mais popular",btnText:"Assinar Plus",btnUrl:"#",image:""},
+  {id:3,name:"Pro",price:"49",period:"/mês",desc:"Para quem quer o máximo da Aura.",features:["Tudo do plano Plus","Acesso antecipado a novidades","Benefícios personalizados","Contato direto com a equipe"],featured:false,badge:"Mais popular",btnText:"Assinar Pro",btnUrl:"#",image:""}
+];
+
+let _plans = JSON.parse(JSON.stringify(DEFAULT_PLANS));
+let _db = null, _plansRef = null;
+let nextId = Date.now();
+let toastTimer;
+
+// Inicializa Firebase via import dinâmico
+async function initFirebase(){
+  const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+  const { getFirestore, doc, getDoc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+  const app = initializeApp({
+    apiKey:"AIzaSyCfux94IsnXM2cUxLYN_YrDI2vlhIc1-Yw",
+    authDomain:"aura-applications-afd15.firebaseapp.com",
+    projectId:"aura-applications-afd15",
+    storageBucket:"aura-applications-afd15.firebasestorage.app",
+    messagingSenderId:"665233735729",
+    appId:"1:665233735729:web:6b781ad6763444c1ad1510"
+  });
+  _db = getFirestore(app);
+  _plansRef = doc(_db,'site','plans');
+  window._fbGetDoc = getDoc;
+  window._fbSetDoc = setDoc;
+}
+
+// ===== AUTH =====
+function getAdminPass(){ return localStorage.getItem('aura_admin_pass')||DEFAULT_ADMIN_PASS; }
 
 function doAdminLogin(){
   const val = document.getElementById('admin-pass-input').value;
   const err = document.getElementById('login-err');
-  if(val===getAdminPass()){
+  if(val === getAdminPass()){
     localStorage.setItem('aura_admin_auth','1');
     document.getElementById('login-screen').style.display='none';
     document.getElementById('admin-screen').style.display='block';
@@ -341,42 +355,28 @@ function doAdminLogin(){
     document.getElementById('admin-pass-input').value='';
   }
 }
-window.doAdminLogin = doAdminLogin;
 
 function doAdminLogout(){
   localStorage.removeItem('aura_admin_auth');
   location.reload();
 }
-window.doAdminLogout = doAdminLogout;
 
 function changeAdminPass(){
   const p1=document.getElementById('new-pass').value;
   const p2=document.getElementById('new-pass2').value;
-  if(!p1||!p2){return showToast('Preencha ambos os campos.','error');}
-  if(p1!==p2){return showToast('As senhas não coincidem.','error');}
-  if(p1.length<4){return showToast('Senha muito curta.','error');}
+  if(!p1||!p2) return showToast('Preencha ambos os campos.','error');
+  if(p1!==p2) return showToast('As senhas não coincidem.','error');
+  if(p1.length<4) return showToast('Senha muito curta.','error');
   localStorage.setItem('aura_admin_pass',p1);
   document.getElementById('new-pass').value='';
   document.getElementById('new-pass2').value='';
   showToast('Senha alterada com sucesso!','success');
 }
-window.changeAdminPass = changeAdminPass;
 
-// ===== PLANS DATA =====
-const DEFAULT_PLANS = [
-  {id:1,name:"Básico",price:"0",period:"/mês",desc:"Para quem está começando na comunidade.",features:["Acesso aos canais gerais","Participação em eventos abertos","Suporte padrão"],featured:false,badge:"Mais popular",btnText:"Começar grátis",btnUrl:"#",image:""},
-  {id:2,name:"Plus",price:"19",period:"/mês",desc:"O plano mais escolhido pela comunidade.",features:["Tudo do plano Básico","Cargo exclusivo no servidor","Acesso a canais reservados","Suporte prioritário"],featured:true,badge:"Mais popular",btnText:"Assinar Plus",btnUrl:"#",image:""},
-  {id:3,name:"Pro",price:"49",period:"/mês",desc:"Para quem quer o máximo da Aura.",features:["Tudo do plano Plus","Acesso antecipado a novidades","Benefícios personalizados","Contato direto com a equipe"],featured:false,badge:"Mais popular",btnText:"Assinar Pro",btnUrl:"#",image:""}
-];];
-
-let _plans = [...DEFAULT_PLANS];
-let nextId = Date.now();
-
-function getPlans(){ return _plans; }
-
+// ===== PLANS =====
 async function savePlans(list){
   _plans = list;
-  await setDoc(plansRef, { list });
+  if(_plansRef && window._fbSetDoc) await window._fbSetDoc(_plansRef,{list});
 }
 
 async function addPlan(){
@@ -386,61 +386,53 @@ async function addPlan(){
   renderPlanCards();
   showToast('Plano criado.','success');
 }
-window.addPlan = addPlan;
 
 async function deletePlan(id){
-  if(!confirm('Excluir este plano?'))return;
-  const plans=_plans.filter(p=>p.id!==id);
-  await savePlans(plans);
+  if(!confirm('Excluir este plano?')) return;
+  await savePlans(_plans.filter(p=>p.id!==id));
   renderPlanCards();
   showToast('Plano excluído.','success');
 }
-window.deletePlan = deletePlan;
 
 async function savePlan(id){
   const plans=[..._plans];
   const idx=plans.findIndex(p=>p.id===id);
-  if(idx===-1)return;
-  const s=id;
-  plans[idx].name=document.getElementById(`pname-${s}`).value;
-  plans[idx].price=document.getElementById(`pprice-${s}`).value;
-  plans[idx].period=document.getElementById(`pperiod-${s}`).value;
-  plans[idx].desc=document.getElementById(`pdesc-${s}`).value;
-  plans[idx].btnText=document.getElementById(`pbtn-${s}`).value;
-  plans[idx].btnUrl=document.getElementById(`purl-${s}`).value;
-  plans[idx].badge=document.getElementById(`pbadge-${s}`).value;
-  plans[idx].featured=document.getElementById(`pfeat-${s}`).checked;
-  plans[idx].image=document.getElementById(`pimg-${s}`).value;
+  if(idx===-1) return;
+  plans[idx].name=document.getElementById('pname-'+id).value;
+  plans[idx].price=document.getElementById('pprice-'+id).value;
+  plans[idx].period=document.getElementById('pperiod-'+id).value;
+  plans[idx].desc=document.getElementById('pdesc-'+id).value;
+  plans[idx].btnText=document.getElementById('pbtn-'+id).value;
+  plans[idx].btnUrl=document.getElementById('purl-'+id).value;
+  plans[idx].badge=document.getElementById('pbadge-'+id).value;
+  plans[idx].featured=document.getElementById('pfeat-'+id).checked;
+  plans[idx].image=document.getElementById('pimg-'+id).value;
   const feats=[];
-  document.querySelectorAll(`.feat-input-${s}`).forEach(inp=>{if(inp.value.trim())feats.push(inp.value.trim());});
+  document.querySelectorAll('.feat-input-'+id).forEach(inp=>{if(inp.value.trim())feats.push(inp.value.trim());});
   plans[idx].features=feats;
   await savePlans(plans);
   renderPlanCards();
   showToast('Plano "'+plans[idx].name+'" salvo!','success');
 }
-window.savePlan = savePlan;
 
 function addFeature(id){
-  const list=document.getElementById(`feats-${id}`);
+  const list=document.getElementById('feats-'+id);
   const item=document.createElement('div');
   item.className='feature-item';
-  item.innerHTML=`<input type="text" class="feat-input-${id}" placeholder="Nova feature"><button class="btn-remove-feat" onclick="this.parentElement.remove()">×</button>`;
+  item.innerHTML='<input type="text" class="feat-input-'+id+'" placeholder="Nova feature"><button class="btn-remove-feat" onclick="this.parentElement.remove()">×</button>';
   list.appendChild(item);
 }
-window.addFeature = addFeature;
 
 function previewImage(id){
-  const val=document.getElementById(`pimg-${id}`).value.trim();
-  const img=document.getElementById(`imgprev-${id}`);
+  const val=document.getElementById('pimg-'+id).value.trim();
+  const img=document.getElementById('imgprev-'+id);
   if(val){img.src=val;img.classList.add('visible');}
-  else{img.classList.remove('visible');}
+  else img.classList.remove('visible');
 }
-window.previewImage = previewImage;
 
 function renderPlanCards(){
-  const plans=_plans;
   const container=document.getElementById('plan-cards');
-  container.innerHTML=plans.map(p=>`
+  container.innerHTML=_plans.map(p=>`
     <div class="plan-editor${p.featured?' is-featured':''}">
       <div class="plan-editor-header">
         <div class="plan-editor-title">${p.name}${p.featured?' <span style="font-size:11px;color:var(--violet);background:rgba(139,92,246,.15);padding:2px 8px;border-radius:6px;">destaque</span>':''}</div>
@@ -449,128 +441,95 @@ function renderPlanCards(){
           <button class="btn-sm danger" onclick="deletePlan(${p.id})">Excluir</button>
         </div>
       </div>
-
       <div class="plan-grid">
-        <div class="field"><label>Nome do plano</label>
-          <input type="text" id="pname-${p.id}" value="${p.name}">
-        </div>
-        <div class="field"><label>Preço (ex: 19)</label>
-          <input type="text" id="pprice-${p.id}" value="${p.price}">
-        </div>
-        <div class="field"><label>Período (ex: /mês)</label>
-          <input type="text" id="pperiod-${p.id}" value="${p.period}">
-        </div>
-        <div class="field"><label>Texto do botão</label>
-          <input type="text" id="pbtn-${p.id}" value="${p.btnText}">
-        </div>
-        <div class="field" style="grid-column:1/-1"><label>Descrição</label>
-          <input type="text" id="pdesc-${p.id}" value="${p.desc}">
-        </div>
-        <div class="field"><label>URL do botão</label>
-          <input type="text" id="purl-${p.id}" value="${p.btnUrl}">
-        </div>
-        <div class="field"><label>Texto do badge de destaque</label>
-          <input type="text" id="pbadge-${p.id}" value="${p.badge}">
-        </div>
+        <div class="field"><label>Nome do plano</label><input type="text" id="pname-${p.id}" value="${p.name}"></div>
+        <div class="field"><label>Preço (ex: 19)</label><input type="text" id="pprice-${p.id}" value="${p.price}"></div>
+        <div class="field"><label>Período (ex: /mês)</label><input type="text" id="pperiod-${p.id}" value="${p.period}"></div>
+        <div class="field"><label>Texto do botão</label><input type="text" id="pbtn-${p.id}" value="${p.btnText}"></div>
+        <div class="field" style="grid-column:1/-1"><label>Descrição</label><input type="text" id="pdesc-${p.id}" value="${p.desc}"></div>
+        <div class="field"><label>URL do botão</label><input type="text" id="purl-${p.id}" value="${p.btnUrl}"></div>
+        <div class="field"><label>Texto do badge de destaque</label><input type="text" id="pbadge-${p.id}" value="${p.badge}"></div>
         <div class="field" style="grid-column:1/-1"><label>URL da imagem (opcional)</label>
           <input type="text" id="pimg-${p.id}" value="${p.image}" oninput="previewImage(${p.id})" placeholder="https://...">
           <img class="image-preview${p.image?' visible':''}" id="imgprev-${p.id}" src="${p.image||''}" alt="Preview">
         </div>
       </div>
-
       <div style="margin-top:20px;">
         <div style="font-size:13px;color:var(--ink-dim);margin-bottom:10px;">Benefícios / Features</div>
         <div class="features-list" id="feats-${p.id}">
-          ${p.features.map(f=>`
-            <div class="feature-item">
-              <input type="text" class="feat-input-${p.id}" value="${f}">
-              <button class="btn-remove-feat" onclick="this.parentElement.remove()">×</button>
-            </div>`).join('')}
+          ${p.features.map(f=>'<div class="feature-item"><input type="text" class="feat-input-'+p.id+'" value="'+f+'"><button class="btn-remove-feat" onclick="this.parentElement.remove()">×</button></div>').join('')}
         </div>
         <button class="btn-add-feat" onclick="addFeature(${p.id})">+ Adicionar benefício</button>
       </div>
-
       <div class="toggle-row">
         <span class="toggle-label">Plano em destaque ("Mais popular")</span>
-        <label class="toggle">
-          <input type="checkbox" id="pfeat-${p.id}" ${p.featured?'checked':''}>
-          <span class="toggle-slider"></span>
-        </label>
+        <label class="toggle"><input type="checkbox" id="pfeat-${p.id}" ${p.featured?'checked':''}><span class="toggle-slider"></span></label>
       </div>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
-window.renderPlanCards = renderPlanCards;
 
 // ===== USERS =====
-function getUsers(){
-  try{return JSON.parse(localStorage.getItem('aura_users'))||[];}catch(e){return [];}
-}
+function getUsers(){ try{return JSON.parse(localStorage.getItem('aura_users'))||[];}catch(e){return[];} }
 
 function renderUsers(){
   const users=getUsers();
   const tbody=document.getElementById('users-tbody');
-  if(!users.length){
-    tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--ink-dim);padding:32px;">Nenhum usuário cadastrado ainda.</td></tr>';
-    return;
-  }
-  tbody.innerHTML=users.map((u,i)=>`
-    <tr>
-      <td style="color:var(--ink-dim);font-size:13px;">${i+1}</td>
-      <td>${u.name}</td>
-      <td style="color:var(--ink-dim);">${u.email}</td>
-      <td style="color:var(--ink-dim);font-size:13px;">${u.createdAt?new Date(u.createdAt).toLocaleDateString('pt-BR'):'-'}</td>
-      <td><button class="btn-sm danger" onclick="deleteUser('${u.email}')">Excluir</button></td>
-    </tr>
-  `).join('');
+  if(!users.length){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--ink-dim);padding:32px;">Nenhum usuário cadastrado ainda.</td></tr>';return;}
+  tbody.innerHTML=users.map((u,i)=>`<tr>
+    <td style="color:var(--ink-dim);font-size:13px;">${i+1}</td>
+    <td>${u.name}</td><td style="color:var(--ink-dim);">${u.email}</td>
+    <td style="color:var(--ink-dim);font-size:13px;">${u.createdAt?new Date(u.createdAt).toLocaleDateString('pt-BR'):'-'}</td>
+    <td><button class="btn-sm danger" onclick="deleteUser('${u.email}')">Excluir</button></td>
+  </tr>`).join('');
 }
-window.renderUsers = renderUsers;
 
 function deleteUser(email){
-  if(!confirm('Excluir o usuário '+email+'?'))return;
-  const users=getUsers().filter(u=>u.email!==email);
-  localStorage.setItem('aura_users',JSON.stringify(users));
+  if(!confirm('Excluir o usuário '+email+'?')) return;
+  localStorage.setItem('aura_users',JSON.stringify(getUsers().filter(u=>u.email!==email)));
   renderUsers();
   showToast('Usuário excluído.','success');
 }
-window.deleteUser = deleteUser;
 
 // ===== TABS =====
 function switchTab(name){
-  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
-  const tabs=['plans','users','settings'];
-  const idx=tabs.indexOf(name);
+  const idx=['plans','users','settings'].indexOf(name);
   document.querySelectorAll('.tab')[idx].classList.add('active');
   document.getElementById('tab-'+name).classList.add('active');
-  if(name==='users')renderUsers();
+  if(name==='users') renderUsers();
 }
-window.switchTab = switchTab;
 
 // ===== TOAST =====
-let toastTimer;
-function showToast(msg,type='success'){
+function showToast(msg,type){
   const t=document.getElementById('toast');
-  t.textContent=msg;t.className='toast '+type+' show';
+  t.textContent=msg;t.className='toast '+(type||'success')+' show';
   clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),3500);
 }
 
 // ===== INIT =====
 async function renderAll(){
-  const snap = await getDoc(plansRef);
-  if(snap.exists() && snap.data().list && snap.data().list.length){
-    _plans = snap.data().list;
-  }
+  try{
+    if(_plansRef && window._fbGetDoc){
+      const snap=await window._fbGetDoc(_plansRef);
+      if(snap.exists()&&snap.data().list&&snap.data().list.length) _plans=snap.data().list;
+    }
+  }catch(e){console.warn('Firebase read error',e);}
   renderPlanCards();
   renderUsers();
 }
 
-window.addEventListener('load',()=>{
+window.addEventListener('load', async ()=>{
+  await initFirebase();
   if(localStorage.getItem('aura_admin_auth')==='1'){
     document.getElementById('login-screen').style.display='none';
     document.getElementById('admin-screen').style.display='block';
     renderAll();
   }
+  // enter no input de senha
+  document.getElementById('admin-pass-input').addEventListener('keydown',e=>{
+    if(e.key==='Enter') doAdminLogin();
+  });
 });
 </script>
 </body>
