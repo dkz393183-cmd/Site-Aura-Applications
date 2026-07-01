@@ -327,24 +327,62 @@ function confirmBot(){
     document.getElementById('addbot-name-display').textContent=_selectedBot;
     document.getElementById('addbot-link').href=BOT_LINKS[_selectedBot];
     openModal('modal-addbot');
-  }else{openPixModal(_botPlanName,_selectedBot);}
-}
-const PIX_KEY='55761105870';
-function openPixModal(planName,botName){
-  document.getElementById('pix-plan-text').textContent=planName;
-  document.getElementById('pix-bot-text').textContent=botName;
-  document.getElementById('pix-step-plan').textContent=planName;
-  document.getElementById('pix-step-bot').textContent=botName;
-  const qrData=encodeURIComponent('Pix: '+PIX_KEY+' | Plano: '+planName+' | Bot: '+botName);
-  document.getElementById('pix-qr-img').src='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+qrData;
-  openModal('modal-pix');
-  // Registra a intenção de compra no Firebase para o bot ser notificado
-  registerPurchaseIntent(planName, botName);
+  }else{
+    openPixModal(_botPlanName,_selectedBot,plan?plan.price:'0');
+  }
 }
 
-async function registerPurchaseIntent(planName, botName){
+// ===== PIX via PurinCash (proxy seguro pelo bot) =====
+// Troca pela URL pública do seu bot quando hospedar (ex: Railway, Render)
+const BOT_PROXY_URL = 'https://aura-bot-tz2a.onrender.com';
+
+async function openPixModal(planName, botName, planPrice){
+  document.getElementById('pix-plan-text').textContent = planName;
+  document.getElementById('pix-bot-text').textContent  = botName;
+  document.getElementById('pix-step-plan').textContent = planName;
+  document.getElementById('pix-step-bot').textContent  = botName;
+  document.getElementById('pix-qr-img').src = '';
+  document.getElementById('pix-key-display').textContent = 'Gerando pagamento...';
+  openModal('modal-pix');
+
   try{
-    console.log('💾 Registrando compra no Firebase:', planName, botName);
+    const s = getSession();
+    const valueCents = Math.round(parseFloat(planPrice) * 100) || 100;
+
+    const res = await fetch(`${BOT_PROXY_URL}/criar-pagamento`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        valueCents,
+        plan: planName,
+        bot: botName,
+        customerName:  s ? s.name  : 'Cliente',
+        customerEmail: s ? s.email : ''
+      })
+    });
+
+    const data = await res.json();
+
+    if(data.pix && data.pix.qrCodeImage){
+      document.getElementById('pix-qr-img').src = data.pix.qrCodeImage;
+      document.getElementById('pix-key-display').textContent = data.pix.brCode || '55761105870';
+      window._pixBrCode = data.pix.brCode || '';
+      registerPurchaseIntent(planName, botName, data.paymentId, planPrice);
+    } else {
+      throw new Error(data.error || 'Sem QR Code');
+    }
+  }catch(e){
+    console.warn('Pagamento PurinCash falhou, usando fallback:', e.message);
+    window._pixBrCode = '55761105870';
+    document.getElementById('pix-key-display').textContent = '55761105870';
+    const qrData = encodeURIComponent('Pix: 55761105870 | Plano: '+planName+' | Bot: '+botName);
+    document.getElementById('pix-qr-img').src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+qrData;
+    registerPurchaseIntent(planName, botName, null, planPrice);
+  }
+}
+
+async function registerPurchaseIntent(planName, botName, paymentId, planPrice){
+  try{
     const s = getSession();
     const body = {
       fields:{
@@ -352,21 +390,23 @@ async function registerPurchaseIntent(planName, botName){
         email:     { stringValue: s ? s.email : '' },
         plan:      { stringValue: planName },
         bot:       { stringValue: botName },
+        price:     { stringValue: String(planPrice||'0') },
+        paymentId: { stringValue: paymentId || '' },
         createdAt: { stringValue: new Date().toISOString() },
         status:    { stringValue: 'pending' }
       }
     };
-    const res = await fetch(
+    await fetch(
       'https://firestore.googleapis.com/v1/projects/aura-applications-afd15/databases/(default)/documents/purchases?key=AIzaSyCfux94IsnXM2cUxLYN_YrDI2vlhIc1-Yw',
       { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) }
     );
-    const data = await res.json();
-    console.log('✅ Firebase response:', res.status, data.name || data.error);
-  }catch(e){ console.error('❌ Firebase purchase log:', e); }
+  }catch(e){ console.warn('Firebase purchase log:',e); }
 }
+
 function copyPixKey(){
-  navigator.clipboard.writeText(PIX_KEY).then(()=>showToast('Chave Pix copiada!','success')).catch(()=>{
-    const el=document.createElement('textarea');el.value=PIX_KEY;document.body.appendChild(el);el.select();document.execCommand('copy');document.body.removeChild(el);showToast('Chave Pix copiada!','success');
+  const key = window._pixBrCode || document.getElementById('pix-key-display').textContent;
+  navigator.clipboard.writeText(key).then(()=>showToast('Chave Pix copiada!','success')).catch(()=>{
+    const el=document.createElement('textarea');el.value=key;document.body.appendChild(el);el.select();document.execCommand('copy');document.body.removeChild(el);showToast('Chave Pix copiada!','success');
   });
 }
 let toastTimer;
