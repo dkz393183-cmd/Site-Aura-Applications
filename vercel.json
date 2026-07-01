@@ -1,7 +1,7 @@
 {
+  "cleanUrls": true,
   "rewrites": [
-    { "source": "/", "destination": "/aura-applications.html" },
-    { "source": "/admin", "destination": "/admin.html" }
+    { "source": "/", "destination": "/aura-applications.html" }
   ],
   "headers": [
     {

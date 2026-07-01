@@ -307,7 +307,23 @@ a{color:inherit;text-decoration:none;}
   </div>
 </div>
 
-<script>
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, doc, getDoc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCfux94IsnXM2cUxLYN_YrDI2vlhIc1-Yw",
+  authDomain: "aura-applications-afd15.firebaseapp.com",
+  projectId: "aura-applications-afd15",
+  storageBucket: "aura-applications-afd15.firebasestorage.app",
+  messagingSenderId: "665233735729",
+  appId: "1:665233735729:web:6b781ad6763444c1ad1510"
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const db = getFirestore(fbApp);
+const plansRef = doc(db, 'site', 'plans');
+
 // ===== ADMIN PASSWORD =====
 const DEFAULT_ADMIN_PASS = 'aura2026';
 function getAdminPass(){return localStorage.getItem('aura_admin_pass')||DEFAULT_ADMIN_PASS;}
@@ -325,11 +341,13 @@ function doAdminLogin(){
     document.getElementById('admin-pass-input').value='';
   }
 }
+window.doAdminLogin = doAdminLogin;
 
 function doAdminLogout(){
   localStorage.removeItem('aura_admin_auth');
   location.reload();
 }
+window.doAdminLogout = doAdminLogout;
 
 function changeAdminPass(){
   const p1=document.getElementById('new-pass').value;
@@ -342,40 +360,47 @@ function changeAdminPass(){
   document.getElementById('new-pass2').value='';
   showToast('Senha alterada com sucesso!','success');
 }
+window.changeAdminPass = changeAdminPass;
 
 // ===== PLANS DATA =====
 const DEFAULT_PLANS = [
   {id:1,name:"Básico",price:"0",period:"/mês",desc:"Para quem está começando na comunidade.",features:["Acesso aos canais gerais","Participação em eventos abertos","Suporte padrão"],featured:false,badge:"Mais popular",btnText:"Começar grátis",btnUrl:"#",image:""},
   {id:2,name:"Plus",price:"19",period:"/mês",desc:"O plano mais escolhido pela comunidade.",features:["Tudo do plano Básico","Cargo exclusivo no servidor","Acesso a canais reservados","Suporte prioritário"],featured:true,badge:"Mais popular",btnText:"Assinar Plus",btnUrl:"#",image:""},
   {id:3,name:"Pro",price:"49",period:"/mês",desc:"Para quem quer o máximo da Aura.",features:["Tudo do plano Plus","Acesso antecipado a novidades","Benefícios personalizados","Contato direto com a equipe"],featured:false,badge:"Mais popular",btnText:"Assinar Pro",btnUrl:"#",image:""}
-];
+];];
 
-function getPlans(){
-  try{return JSON.parse(localStorage.getItem('aura_plans'))||DEFAULT_PLANS;}catch(e){return DEFAULT_PLANS;}
-}
-function savePlans(p){localStorage.setItem('aura_plans',JSON.stringify(p));}
-
+let _plans = [...DEFAULT_PLANS];
 let nextId = Date.now();
 
-function addPlan(){
-  const plans=getPlans();
+function getPlans(){ return _plans; }
+
+async function savePlans(list){
+  _plans = list;
+  await setDoc(plansRef, { list });
+}
+
+async function addPlan(){
+  const plans=[..._plans];
   plans.push({id:nextId++,name:"Novo Plano",price:"0",period:"/mês",desc:"Descrição do plano.",features:["Benefício 1"],featured:false,badge:"Mais popular",btnText:"Assinar",btnUrl:"#",image:""});
-  savePlans(plans);renderPlanCards();
+  await savePlans(plans);
+  renderPlanCards();
   showToast('Plano criado.','success');
 }
+window.addPlan = addPlan;
 
-function deletePlan(id){
+async function deletePlan(id){
   if(!confirm('Excluir este plano?'))return;
-  const plans=getPlans().filter(p=>p.id!==id);
-  savePlans(plans);renderPlanCards();
+  const plans=_plans.filter(p=>p.id!==id);
+  await savePlans(plans);
+  renderPlanCards();
   showToast('Plano excluído.','success');
 }
+window.deletePlan = deletePlan;
 
-function savePlan(id){
-  const plans=getPlans();
+async function savePlan(id){
+  const plans=[..._plans];
   const idx=plans.findIndex(p=>p.id===id);
   if(idx===-1)return;
-
   const s=id;
   plans[idx].name=document.getElementById(`pname-${s}`).value;
   plans[idx].price=document.getElementById(`pprice-${s}`).value;
@@ -386,17 +411,14 @@ function savePlan(id){
   plans[idx].badge=document.getElementById(`pbadge-${s}`).value;
   plans[idx].featured=document.getElementById(`pfeat-${s}`).checked;
   plans[idx].image=document.getElementById(`pimg-${s}`).value;
-
-  // features
   const feats=[];
-  document.querySelectorAll(`.feat-input-${s}`).forEach(inp=>{
-    if(inp.value.trim())feats.push(inp.value.trim());
-  });
+  document.querySelectorAll(`.feat-input-${s}`).forEach(inp=>{if(inp.value.trim())feats.push(inp.value.trim());});
   plans[idx].features=feats;
-
-  savePlans(plans);renderPlanCards();
+  await savePlans(plans);
+  renderPlanCards();
   showToast('Plano "'+plans[idx].name+'" salvo!','success');
 }
+window.savePlan = savePlan;
 
 function addFeature(id){
   const list=document.getElementById(`feats-${id}`);
@@ -405,6 +427,7 @@ function addFeature(id){
   item.innerHTML=`<input type="text" class="feat-input-${id}" placeholder="Nova feature"><button class="btn-remove-feat" onclick="this.parentElement.remove()">×</button>`;
   list.appendChild(item);
 }
+window.addFeature = addFeature;
 
 function previewImage(id){
   const val=document.getElementById(`pimg-${id}`).value.trim();
@@ -412,9 +435,10 @@ function previewImage(id){
   if(val){img.src=val;img.classList.add('visible');}
   else{img.classList.remove('visible');}
 }
+window.previewImage = previewImage;
 
 function renderPlanCards(){
-  const plans=getPlans();
+  const plans=_plans;
   const container=document.getElementById('plan-cards');
   container.innerHTML=plans.map(p=>`
     <div class="plan-editor${p.featured?' is-featured':''}">
@@ -476,6 +500,7 @@ function renderPlanCards(){
     </div>
   `).join('');
 }
+window.renderPlanCards = renderPlanCards;
 
 // ===== USERS =====
 function getUsers(){
@@ -499,6 +524,7 @@ function renderUsers(){
     </tr>
   `).join('');
 }
+window.renderUsers = renderUsers;
 
 function deleteUser(email){
   if(!confirm('Excluir o usuário '+email+'?'))return;
@@ -507,6 +533,7 @@ function deleteUser(email){
   renderUsers();
   showToast('Usuário excluído.','success');
 }
+window.deleteUser = deleteUser;
 
 // ===== TABS =====
 function switchTab(name){
@@ -518,6 +545,7 @@ function switchTab(name){
   document.getElementById('tab-'+name).classList.add('active');
   if(name==='users')renderUsers();
 }
+window.switchTab = switchTab;
 
 // ===== TOAST =====
 let toastTimer;
@@ -528,7 +556,14 @@ function showToast(msg,type='success'){
 }
 
 // ===== INIT =====
-function renderAll(){renderPlanCards();renderUsers();}
+async function renderAll(){
+  const snap = await getDoc(plansRef);
+  if(snap.exists() && snap.data().list && snap.data().list.length){
+    _plans = snap.data().list;
+  }
+  renderPlanCards();
+  renderUsers();
+}
 
 window.addEventListener('load',()=>{
   if(localStorage.getItem('aura_admin_auth')==='1'){

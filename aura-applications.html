@@ -404,19 +404,32 @@ footer{border-top:1px solid var(--line);padding:44px 6%;display:flex;justify-con
   <div>© 2026 Aura Applications — todos os direitos reservados</div>
 </footer>
 
-<script>
+<script type="module">
+// ===== FIREBASE =====
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, doc, getDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCfux94IsnXM2cUxLYN_YrDI2vlhIc1-Yw",
+  authDomain: "aura-applications-afd15.firebaseapp.com",
+  projectId: "aura-applications-afd15",
+  storageBucket: "aura-applications-afd15.firebasestorage.app",
+  messagingSenderId: "665233735729",
+  appId: "1:665233735729:web:6b781ad6763444c1ad1510"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
 const DEFAULT_PLANS=[
   {id:1,name:"Básico",price:"0",period:"/mês",desc:"Para quem está começando na comunidade.",features:["Acesso aos canais gerais","Participação em eventos abertos","Suporte padrão"],featured:false,badge:"Mais popular",btnText:"Começar grátis",btnUrl:"#",image:""},
   {id:2,name:"Plus",price:"19",period:"/mês",desc:"O plano mais escolhido pela comunidade.",features:["Tudo do plano Básico","Cargo exclusivo no servidor","Acesso a canais reservados","Suporte prioritário"],featured:true,badge:"Mais popular",btnText:"Assinar Plus",btnUrl:"#",image:""},
   {id:3,name:"Pro",price:"49",period:"/mês",desc:"Para quem quer o máximo da Aura.",features:["Tudo do plano Plus","Acesso antecipado a novidades","Benefícios personalizados","Contato direto com a equipe"],featured:false,badge:"Mais popular",btnText:"Assinar Pro",btnUrl:"#",image:""}
 ];
 
-function getPlans(){try{return JSON.parse(localStorage.getItem('aura_plans'))||DEFAULT_PLANS;}catch(e){return DEFAULT_PLANS;}}
-
-function renderPlans(){
+function renderPlansData(plans){
   const grid=document.getElementById('pricing-grid');
   if(!grid)return;
-  const plans=getPlans();
   grid.innerHTML=plans.map(p=>`
     <div class="plan${p.featured?' featured':''}"${p.featured?` data-badge="${p.badge}"`:''}">
       ${p.image?`<img class="plan-image visible" src="${p.image}" alt="${p.name}">`:''}
@@ -427,6 +440,12 @@ function renderPlans(){
       <a href="javascript:void(0)" class="plan-btn" onclick="openBotModal('${p.name}','${p.btnUrl}')">${p.btnText}</a>
     </div>`).join('');
 }
+
+// Escuta mudanças em tempo real — atualiza para todos os visitantes ao mesmo tempo
+onSnapshot(doc(db,'site','plans'), snap=>{
+  const data = snap.exists() ? snap.data().list : null;
+  renderPlansData(data && data.length ? data : DEFAULT_PLANS);
+});
 
 function getUsers(){try{return JSON.parse(localStorage.getItem('aura_users'))||[];}catch(e){return[];}}
 function saveUsers(u){localStorage.setItem('aura_users',JSON.stringify(u));}
@@ -554,6 +573,18 @@ function showToast(msg,type){
   clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),3500);
 }
 
+// Expõe funções para os onclick no HTML (necessário com type="module")
+window.doRegister=doRegister;
+window.doLogin=doLogin;
+window.doLogout=doLogout;
+window.openModal=openModal;
+window.closeModal=closeModal;
+window.switchModal=switchModal;
+window.openBotModal=openBotModal;
+window.selectBot=selectBot;
+window.confirmBot=confirmBot;
+window.copyPixKey=copyPixKey;
+
 (function(){
   fetch('https://discord.com/api/v10/invites/hakxmJHTRs?with_counts=true')
     .then(r=>r.ok?r.json():null).then(d=>{
@@ -563,7 +594,7 @@ function showToast(msg,type){
     }).catch(()=>{});
 })();
 
-renderPlans();
+renderPlansData(DEFAULT_PLANS); // fallback visual imediato
 updateNavAuth();
 </script>
 </body>
