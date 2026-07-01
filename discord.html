@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Discord — Aura Applications</title>
+<link rel="icon" href="aura-favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0a0d;--bg-soft:#131318;--card:#17171d;--line:#26262f;--ink:#f2f0ea;--ink-dim:#a8a6b0;--violet:#8b5cf6;--cyan:#22d3ee;}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;overflow-x:hidden;}
+h1,h2,h3{font-family:'Space Grotesk',sans-serif;letter-spacing:-.02em;}
+a{color:inherit;text-decoration:none;}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:22px 6%;background:rgba(10,10,13,.7);backdrop-filter:blur(14px);border-bottom:1px solid var(--line);}
+.brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:18px;}
+.brand-mark{width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk';font-weight:700;font-size:16px;background:linear-gradient(135deg,var(--violet),var(--cyan));color:#0a0a0d;border-radius:6px;}
+.nav-links{display:flex;gap:36px;font-size:14px;color:var(--ink-dim);}
+.nav-links a:hover{color:var(--ink);}
+.nav-links a.active{color:var(--ink);border-bottom:2px solid var(--violet);padding-bottom:2px;}
+.nav-auth{display:flex;gap:10px;align-items:center;}
+.nav-cta{padding:10px 20px;border-radius:8px;background:var(--ink);color:#0a0a0d;font-weight:600;font-size:14px;cursor:pointer;border:none;font-family:inherit;}
+.nav-btn-outline{padding:10px 20px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);font-weight:600;font-size:14px;cursor:pointer;transition:border-color .2s;font-family:inherit;}
+.nav-btn-outline:hover{border-color:var(--violet);}
+.nav-user{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--ink-dim);}
+.nav-user strong{color:var(--ink);}
+.nav-user button{background:none;border:1px solid var(--line);color:var(--ink-dim);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:13px;font-family:inherit;}
+.nav-user button:hover{border-color:var(--violet);color:var(--ink);}
+.modal-overlay{display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:40px 36px;width:100%;max-width:420px;position:relative;}
+.modal h2{font-size:22px;margin-bottom:6px;}
+.modal p.sub{color:var(--ink-dim);font-size:14px;margin-bottom:28px;}
+.modal-close{position:absolute;top:16px;right:20px;background:none;border:none;color:var(--ink-dim);font-size:22px;cursor:pointer;}
+.modal-close:hover{color:var(--ink);}
+.field{margin-bottom:18px;}
+.field label{display:block;font-size:13px;color:var(--ink-dim);margin-bottom:6px;}
+.field input{width:100%;padding:11px 14px;border-radius:8px;background:var(--bg-soft);border:1px solid var(--line);color:var(--ink);font-size:14px;font-family:inherit;transition:border-color .2s;}
+.field input:focus{outline:none;border-color:var(--violet);}
+.modal-submit{width:100%;padding:13px;border-radius:10px;background:linear-gradient(135deg,var(--violet),#6d3fd6);border:none;color:var(--ink);font-weight:600;font-size:15px;cursor:pointer;margin-top:4px;font-family:inherit;}
+.modal-submit:hover{opacity:.9;}
+.modal-switch{text-align:center;margin-top:20px;font-size:13px;color:var(--ink-dim);}
+.modal-switch a{color:var(--violet);cursor:pointer;}
+.modal-switch a:hover{text-decoration:underline;}
+.modal-error{color:#f87171;font-size:13px;margin-top:-10px;margin-bottom:10px;display:none;}
+.modal-error.show{display:block;}
+.section{padding:120px 6%;max-width:1180px;margin:0 auto;}
+.tag{display:inline-block;font-size:12px;color:var(--cyan);text-transform:uppercase;letter-spacing:.15em;margin-bottom:16px;}
+.discord-banner{position:relative;border-radius:24px;padding:64px 8%;background:radial-gradient(circle at 20% 20%,rgba(139,92,246,.25),transparent 55%),radial-gradient(circle at 80% 80%,rgba(34,211,238,.18),transparent 55%),var(--bg-soft);border:1px solid var(--line);text-align:center;overflow:hidden;}
+.discord-banner .tag{color:var(--violet);}
+.discord-banner h2{font-family:'Space Grotesk',sans-serif;font-size:clamp(24px,4vw,40px);font-weight:600;margin:0 auto 16px;}
+.discord-banner p{color:var(--ink-dim);max-width:520px;margin:0 auto 34px;line-height:1.6;font-size:16px;}
+.member-pills{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:34px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--ink-dim);}
+.member-pills span{padding:8px 16px;border:1px solid var(--line);border-radius:999px;}
+.member-pills strong{color:var(--ink);}
+.discord-btn{display:inline-flex;align-items:center;gap:10px;padding:16px 34px;border-radius:12px;background:var(--ink);color:#0a0a0d;font-weight:600;font-size:16px;}
+footer{border-top:1px solid var(--line);padding:44px 6%;display:flex;justify-content:space-between;align-items:center;color:var(--ink-dim);font-size:13px;flex-wrap:wrap;gap:16px;}
+.toast{position:fixed;bottom:30px;right:30px;z-index:9999;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 20px;font-size:14px;box-shadow:0 8px 30px rgba(0,0,0,.4);transform:translateY(20px);opacity:0;transition:all .3s ease;pointer-events:none;}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.success{border-color:var(--cyan);}
+.toast.error{border-color:#f87171;}
+.modal-bot{max-width:560px;}
+.modal-bot h2{font-size:24px;margin-bottom:8px;}
+.modal-bot .plan-label{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--violet);background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.3);padding:4px 12px;border-radius:999px;margin-bottom:24px;font-family:'JetBrains Mono',monospace;}
+.bot-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:8px;}
+.bot-card{background:var(--bg-soft);border:1px solid var(--line);border-radius:14px;padding:20px 14px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s,transform .15s;user-select:none;}
+.bot-card:hover{border-color:var(--violet);background:rgba(139,92,246,.07);transform:translateY(-2px);}
+.bot-card.selected{border-color:var(--violet);background:rgba(139,92,246,.12);}
+.bot-icon{font-size:28px;margin-bottom:10px;display:block;}
+.bot-name{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:4px;}
+.bot-desc{font-size:11.5px;color:var(--ink-dim);line-height:1.4;}
+.bot-confirm{width:100%;padding:14px;border-radius:10px;background:linear-gradient(135deg,var(--violet),#6d3fd6);border:none;color:var(--ink);font-weight:600;font-size:15px;cursor:pointer;font-family:inherit;margin-top:16px;opacity:.4;transition:opacity .2s;pointer-events:none;}
+.bot-confirm.ready{opacity:1;pointer-events:auto;}
+.bot-confirm.ready:hover{opacity:.9;}
+.modal-pix{max-width:460px;text-align:center;}
+.modal-pix h2{font-size:22px;margin-bottom:6px;}
+.modal-pix .pix-subtitle{color:var(--ink-dim);font-size:14px;margin-bottom:24px;line-height:1.5;}
+.pix-order-info{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:24px;}
+.pix-pill{font-size:12px;font-family:'JetBrains Mono',monospace;padding:5px 14px;border-radius:999px;border:1px solid var(--line);color:var(--ink-dim);background:var(--bg-soft);}
+.pix-pill span{color:var(--violet);}
+.qr-wrapper{width:200px;height:200px;margin:0 auto 20px;border-radius:16px;overflow:hidden;border:2px solid var(--line);background:#fff;padding:8px;display:flex;align-items:center;justify-content:center;}
+.qr-wrapper img{width:100%;height:100%;object-fit:contain;}
+.pix-key-box{background:var(--bg-soft);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.pix-key-label{font-size:11px;color:var(--ink-dim);margin-bottom:3px;text-align:left;}
+.pix-key-value{font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--ink);text-align:left;}
+.btn-copy{padding:8px 14px;border-radius:7px;border:1px solid var(--violet);background:transparent;color:var(--violet);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;transition:background .2s,color .2s;flex-shrink:0;}
+.btn-copy:hover{background:var(--violet);color:#0a0a0d;}
+.pix-divider{border:none;border-top:1px solid var(--line);margin:20px 0;}
+.pix-after-title{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:10px;}
+.pix-after-steps{background:var(--bg-soft);border:1px solid var(--line);border-radius:12px;padding:16px 20px;text-align:left;margin-bottom:20px;}
+.pix-after-steps li{font-size:13px;color:var(--ink-dim);line-height:1.6;padding:6px 0;display:flex;gap:10px;align-items:flex-start;border-bottom:1px solid var(--line);}
+.pix-after-steps li:last-child{border-bottom:none;}
+.pix-after-steps li b{color:var(--ink);}
+.pix-step-num{min-width:22px;height:22px;border-radius:50%;background:rgba(139,92,246,.2);color:var(--violet);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.btn-discord-modal{display:inline-flex;align-items:center;gap:8px;width:100%;padding:13px;border-radius:10px;justify-content:center;background:var(--ink);color:#0a0a0d;font-weight:600;font-size:15px;border:none;cursor:pointer;font-family:inherit;text-decoration:none;transition:opacity .2s;}
+.btn-discord-modal:hover{opacity:.85;}
+.modal-addbot{max-width:420px;text-align:center;}
+.addbot-tag{display:inline-block;font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--cyan);background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.3);padding:4px 12px;border-radius:999px;margin-bottom:16px;text-transform:uppercase;letter-spacing:.08em;}
+.btn-addbot{display:inline-flex;align-items:center;justify-content:center;width:100%;padding:14px;border-radius:10px;background:linear-gradient(135deg,var(--violet),#6d3fd6);color:var(--ink);font-weight:600;font-size:15px;text-decoration:none;transition:opacity .2s;}
+.btn-addbot:hover{opacity:.9;}
+@media(max-width:860px){.nav-links{display:none;}}
+@media(max-width:600px){.bot-grid{grid-template-columns:repeat(2,1fr);}}
+</style>
+</head>
+<body>
+
+<!-- MODAL LOGIN -->
+<div class="modal-overlay" id="modal-login">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-login')">×</button>
+    <h2>Entrar</h2>
+    <p class="sub">Acesse sua conta Aura Applications.</p>
+    <div class="modal-error" id="login-error"></div>
+    <div class="field"><label>E-mail</label><input type="email" id="login-email" placeholder="seu@email.com"></div>
+    <div class="field"><label>Senha</label><input type="password" id="login-pass" placeholder="••••••••"></div>
+    <button class="modal-submit" onclick="doLogin()">Entrar</button>
+    <div class="modal-switch">Não tem conta? <a onclick="switchModal('modal-login','modal-register')">Criar conta</a></div>
+  </div>
+</div>
+
+<!-- MODAL REGISTRO -->
+<div class="modal-overlay" id="modal-register">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-register')">×</button>
+    <h2>Criar conta</h2>
+    <p class="sub">Cadastre-se gratuitamente.</p>
+    <div class="modal-error" id="register-error"></div>
+    <div class="field"><label>Nome</label><input type="text" id="reg-name" placeholder="Seu nome"></div>
+    <div class="field"><label>E-mail</label><input type="email" id="reg-email" placeholder="seu@email.com"></div>
+    <div class="field"><label>Senha</label><input type="password" id="reg-pass" placeholder="Mínimo 6 caracteres"></div>
+    <div class="field"><label>Confirmar senha</label><input type="password" id="reg-pass2" placeholder="Repita a senha"></div>
+    <button class="modal-submit" onclick="doRegister()">Criar conta</button>
+    <div class="modal-switch">Já tem conta? <a onclick="switchModal('modal-register','modal-login')">Entrar</a></div>
+  </div>
+</div>
+
+<!-- MODAL SELEÇÃO DE BOT -->
+<div class="modal-overlay" id="modal-bot">
+  <div class="modal modal-bot">
+    <button class="modal-close" onclick="closeModal('modal-bot')">×</button>
+    <h2>Qual bot você deseja?</h2>
+    <div class="plan-label" id="bot-plan-label">— plano —</div>
+    <div class="bot-grid">
+      <div class="bot-card" onclick="selectBot(this,'AntiRaid')"><span class="bot-icon">🛡️</span><div class="bot-name">AntiRaid</div><div class="bot-desc">Proteção contra raids e ataques ao servidor</div></div>
+      <div class="bot-card" onclick="selectBot(this,'Ranked')"><span class="bot-icon">🏆</span><div class="bot-name">Ranked</div><div class="bot-desc">Sistema de ranking e níveis para membros</div></div>
+      <div class="bot-card" onclick="selectBot(this,'Simulators')"><span class="bot-icon">🎮</span><div class="bot-name">Simulators</div><div class="bot-desc">Bots de simulação e jogos interativos</div></div>
+      <div class="bot-card" onclick="selectBot(this,'Tickets')"><span class="bot-icon">🎫</span><div class="bot-name">Tickets</div><div class="bot-desc">Sistema de atendimento e suporte via tickets</div></div>
+      <div class="bot-card" onclick="selectBot(this,'Vendas')"><span class="bot-icon">🛒</span><div class="bot-name">Vendas</div><div class="bot-desc">Automatize vendas e pagamentos no Discord</div></div>
+      <div class="bot-card" onclick="selectBot(this,'Embeds')"><span class="bot-icon">✨</span><div class="bot-name">Embeds</div><div class="bot-desc">Criação e envio de embeds personalizados</div></div>
+    </div>
+    <button class="bot-confirm" id="bot-confirm-btn" onclick="confirmBot()">Continuar →</button>
+  </div>
+</div>
+
+<!-- MODAL PIX -->
+<div class="modal-overlay" id="modal-pix">
+  <div class="modal modal-pix">
+    <button class="modal-close" onclick="closeModal('modal-pix')">×</button>
+    <h2>Pagamento via Pix</h2>
+    <p class="pix-subtitle">Escaneie o QR Code ou copie a chave Pix para realizar o pagamento.</p>
+    <div class="pix-order-info">
+      <div class="pix-pill">Plano: <span id="pix-plan-text">—</span></div>
+      <div class="pix-pill">Bot: <span id="pix-bot-text">—</span></div>
+    </div>
+    <div class="qr-wrapper"><img id="pix-qr-img" src="" alt="QR Code Pix"></div>
+    <div class="pix-key-box">
+      <div><div class="pix-key-label">Chave Pix (celular)</div><div class="pix-key-value" id="pix-key-display">55761105870</div></div>
+      <button class="btn-copy" onclick="copyPixKey()">Copiar</button>
+    </div>
+    <hr class="pix-divider">
+    <div class="pix-after-title">Após o pagamento:</div>
+    <ul class="pix-after-steps" id="pix-steps-list">
+      <li><span class="pix-step-num">1</span><span>Abra um <b>ticket no nosso servidor do Discord</b> clicando no botão abaixo.</span></li>
+      <li><span class="pix-step-num">2</span><span>Envie o <b>comprovante de pagamento</b> no ticket.</span></li>
+      <li><span class="pix-step-num">3</span><span>Informe que comprou o plano <b id="pix-step-plan">—</b> com o bot <b id="pix-step-bot">—</b>.</span></li>
+      <li><span class="pix-step-num">4</span><span>Nossa equipe irá <b>confirmar e entregar</b> o bot para você.</span></li>
+    </ul>
+    <a href="https://discord.gg/hakxmJHTRs" target="_blank" class="btn-discord-modal">🎫 Abrir ticket no Discord</a>
+  </div>
+</div>
+
+<!-- MODAL ADD BOT GRATUITO -->
+<div class="modal-overlay" id="modal-addbot">
+  <div class="modal modal-addbot">
+    <button class="modal-close" onclick="closeModal('modal-addbot')">×</button>
+    <div class="addbot-tag">Plano Gratuito</div>
+    <h2>Adicionar bot ao servidor</h2>
+    <p class="sub" style="margin-bottom:24px;">Clique no botão abaixo para adicionar o bot <strong id="addbot-name-display">—</strong> diretamente ao seu servidor Discord.</p>
+    <a id="addbot-link" href="#" target="_blank" class="btn-addbot">Adicionar bot ao Discord →</a>
+    <p style="margin-top:16px;font-size:12px;color:var(--ink-dim);text-align:center;">Você será redirecionado para a página de autorização do Discord.</p>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- NAV -->
+<nav>
+  <a class="brand" href="aura-applications.html"><div class="brand-mark">A</div>Aura Applications</a>
+  <div class="nav-links">
+    <a href="sobre.html">Sobre</a>
+    <a href="discord.html" class="active">Discord</a>
+    <a href="precos.html">Preços</a>
+  </div>
+  <div class="nav-auth" id="nav-auth">
+    <button class="nav-btn-outline" onclick="openModal('modal-login')">Entrar</button>
+    <button class="nav-cta" onclick="openModal('modal-register')">Criar conta</button>
+  </div>
+</nav>
+
+<!-- DISCORD (conteúdo principal) -->
+<section class="section" style="padding-top:120px;min-height:calc(100vh - 80px);display:flex;align-items:center;">
+  <div class="discord-banner" style="width:100%;">
+    <div class="tag">entre para a comunidade</div>
+    <h2>O Discord da Aura Applications está te esperando.</h2>
+    <p>Junte-se ao servidor para acompanhar novidades, tirar dúvidas e fazer parte do dia a dia da comunidade.</p>
+    <div class="member-pills">
+      <span><strong id="online-count">—</strong> membros online</span>
+      <span><strong id="total-count">—</strong> membros totais</span>
+      <span><strong>24/7</strong> equipe ativa</span>
+    </div>
+    <a href="https://discord.gg/hakxmJHTRs" target="_blank" class="discord-btn">Entrar no servidor →</a>
+  </div>
+</section>
+
+<footer>
+  <div class="brand"><div class="brand-mark">A</div>Aura Applications</div>
+  <div>© 2026 Aura Applications — todos os direitos reservados</div>
+</footer>
+
+<script>
+const DEFAULT_PLANS=[
+  {id:1,name:"Básico",price:"0",period:"/mês",desc:"Para quem está começando na comunidade.",features:["Acesso aos canais gerais","Participação em eventos abertos","Suporte padrão"],featured:false,badge:"Mais popular",btnText:"Começar grátis",btnUrl:"#",image:""},
+  {id:2,name:"Plus",price:"19",period:"/mês",desc:"O plano mais escolhido pela comunidade.",features:["Tudo do plano Básico","Cargo exclusivo no servidor","Acesso a canais reservados","Suporte prioritário"],featured:true,badge:"Mais popular",btnText:"Assinar Plus",btnUrl:"#",image:""},
+  {id:3,name:"Pro",price:"49",period:"/mês",desc:"Para quem quer o máximo da Aura.",features:["Tudo do plano Plus","Acesso antecipado a novidades","Benefícios personalizados","Contato direto com a equipe"],featured:false,badge:"Mais popular",btnText:"Assinar Pro",btnUrl:"#",image:""}
+];
+let _currentPlans=[...DEFAULT_PLANS];
+function getUsers(){try{return JSON.parse(localStorage.getItem('aura_users'))||[];}catch(e){return[];}}
+function saveUsers(u){localStorage.setItem('aura_users',JSON.stringify(u));}
+function getSession(){try{return JSON.parse(localStorage.getItem('aura_session'));}catch(e){return null;}}
+function setSession(u){localStorage.setItem('aura_session',JSON.stringify(u));}
+function clearSession(){localStorage.removeItem('aura_session');}
+function updateNavAuth(){
+  const nav=document.getElementById('nav-auth');const s=getSession();
+  if(s){nav.innerHTML=`<div class="nav-user">Olá, <strong>${s.name}</strong><button onclick="doLogout()">Sair</button></div>`;}
+  else{nav.innerHTML=`<button class="nav-btn-outline" onclick="openModal('modal-login')">Entrar</button><button class="nav-cta" onclick="openModal('modal-register')">Criar conta</button>`;}
+}
+function doRegister(){
+  const name=document.getElementById('reg-name').value.trim();
+  const email=document.getElementById('reg-email').value.trim().toLowerCase();
+  const pass=document.getElementById('reg-pass').value;const pass2=document.getElementById('reg-pass2').value;
+  const err=document.getElementById('register-error');
+  if(!name||!email||!pass||!pass2)return showErr(err,'Preencha todos os campos.');
+  if(pass.length<6)return showErr(err,'Senha deve ter no mínimo 6 caracteres.');
+  if(pass!==pass2)return showErr(err,'As senhas não coincidem.');
+  const users=getUsers();if(users.find(u=>u.email===email))return showErr(err,'Este e-mail já está cadastrado.');
+  users.push({name,email,pass,createdAt:new Date().toISOString()});saveUsers(users);setSession({name,email});
+  closeModal('modal-register');updateNavAuth();showToast('Conta criada! Bem-vindo(a), '+name+'.','success');
+}
+function doLogin(){
+  const email=document.getElementById('login-email').value.trim().toLowerCase();
+  const pass=document.getElementById('login-pass').value;const err=document.getElementById('login-error');
+  if(!email||!pass)return showErr(err,'Preencha todos os campos.');
+  const user=getUsers().find(u=>u.email===email&&u.pass===pass);
+  if(!user)return showErr(err,'E-mail ou senha incorretos.');
+  setSession({name:user.name,email:user.email});closeModal('modal-login');updateNavAuth();
+  showToast('Bem-vindo(a) de volta, '+user.name+'!','success');
+}
+function doLogout(){clearSession();updateNavAuth();showToast('Você saiu da sua conta.','success');}
+function openModal(id){document.getElementById(id).classList.add('open');document.body.style.overflow='hidden';}
+function closeModal(id){
+  document.getElementById(id).classList.remove('open');document.body.style.overflow='';
+  document.querySelectorAll('.modal-error').forEach(e=>{e.classList.remove('show');e.textContent='';});
+}
+function switchModal(a,b){closeModal(a);openModal(b);}
+document.querySelectorAll('.modal-overlay').forEach(ov=>ov.addEventListener('click',e=>{if(e.target===ov)closeModal(ov.id);}));
+function showErr(el,msg){el.textContent=msg;el.classList.add('show');}
+let _botPlanName='',_botPlanUrl='#',_selectedBot='';
+function openBotModal(planName,planUrl){
+  _botPlanName=planName;_botPlanUrl=planUrl;_selectedBot='';
+  document.getElementById('bot-plan-label').textContent='Plano: '+planName;
+  document.querySelectorAll('.bot-card').forEach(c=>c.classList.remove('selected'));
+  const btn=document.getElementById('bot-confirm-btn');btn.classList.remove('ready');btn.textContent='Selecione um bot para continuar';
+  openModal('modal-bot');
+}
+function selectBot(el,botName){
+  document.querySelectorAll('.bot-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');_selectedBot=botName;
+  const btn=document.getElementById('bot-confirm-btn');btn.classList.add('ready');btn.textContent='Continuar com '+botName+' →';
+}
+const BOT_LINKS={
+  'AntiRaid':'https://discord.com/oauth2/authorize?client_id=1519767841648414891&permissions=8&integration_type=0&scope=applications.commands+bot',
+  'Vendas':'https://discord.com/oauth2/authorize?client_id=1502078647165522011&permissions=8&integration_type=0&scope=bot+applications.commands',
+  'Tickets':'https://discord.com/oauth2/authorize?client_id=1511541268126367776&permissions=8&integration_type=0&scope=bot+applications.commands',
+  'Ranked':'https://discord.com/oauth2/authorize?client_id=1510798098568445952&permissions=8&integration_type=0&scope=bot+applications.commands',
+  'Simulators':'https://discord.com/oauth2/authorize?client_id=1505674324793757850&permissions=8&integration_type=0&scope=bot+applications.commands',
+  'Embeds':'https://discord.com/oauth2/authorize?client_id=1517354385334603847&permissions=8&integration_type=0&scope=bot+applications.commands'
+};
+function confirmBot(){
+  if(!_selectedBot)return;closeModal('modal-bot');
+  const plan=_currentPlans.find(p=>p.name===_botPlanName);
+  const isFree=plan&&(String(plan.price)==='0'||plan.price===0);
+  if(isFree&&BOT_LINKS[_selectedBot]){
+    document.getElementById('addbot-name-display').textContent=_selectedBot;
+    document.getElementById('addbot-link').href=BOT_LINKS[_selectedBot];
+    openModal('modal-addbot');
+  }else{openPixModal(_botPlanName,_selectedBot);}
+}
+const PIX_KEY='55761105870';
+function openPixModal(planName,botName){
+  document.getElementById('pix-plan-text').textContent=planName;
+  document.getElementById('pix-bot-text').textContent=botName;
+  document.getElementById('pix-step-plan').textContent=planName;
+  document.getElementById('pix-step-bot').textContent=botName;
+  const qrData=encodeURIComponent('Pix: '+PIX_KEY+' | Plano: '+planName+' | Bot: '+botName);
+  document.getElementById('pix-qr-img').src='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+qrData;
+  openModal('modal-pix');
+}
+function copyPixKey(){
+  navigator.clipboard.writeText(PIX_KEY).then(()=>showToast('Chave Pix copiada!','success')).catch(()=>{
+    const el=document.createElement('textarea');el.value=PIX_KEY;document.body.appendChild(el);el.select();document.execCommand('copy');document.body.removeChild(el);showToast('Chave Pix copiada!','success');
+  });
+}
+let toastTimer;
+function showToast(msg,type){
+  const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+(type||'success')+' show';
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),3500);
+}
+// Membros do Discord
+fetch('https://discord.com/api/v10/invites/hakxmJHTRs?with_counts=true')
+  .then(r=>r.ok?r.json():null).then(d=>{
+    if(!d)return;
+    if(typeof d.approximate_presence_count==='number')
+      document.getElementById('online-count').textContent=d.approximate_presence_count.toLocaleString('pt-BR');
+    if(typeof d.approximate_member_count==='number')
+      document.getElementById('total-count').textContent=d.approximate_member_count.toLocaleString('pt-BR');
+  }).catch(()=>{});
+updateNavAuth();
+</script>
+</body>
+</html>

@@ -19,6 +19,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
 .brand-mark{width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk';font-weight:700;font-size:16px;background:linear-gradient(135deg,var(--violet),var(--cyan));color:#0a0a0d;border-radius:6px;}
 .nav-links{display:flex;gap:36px;font-size:14px;color:var(--ink-dim);}
 .nav-links a:hover{color:var(--ink);}
+.nav-links a.active{color:var(--ink);border-bottom:2px solid var(--violet);padding-bottom:2px;}
 .nav-auth{display:flex;gap:10px;align-items:center;}
 .nav-cta{padding:10px 20px;border-radius:8px;background:var(--ink);color:#0a0a0d;font-weight:600;font-size:14px;cursor:pointer;border:none;font-family:inherit;}
 .nav-btn-outline{padding:10px 20px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);font-weight:600;font-size:14px;cursor:pointer;transition:border-color .2s;font-family:inherit;}
@@ -357,11 +358,11 @@ footer{border-top:1px solid var(--line);padding:44px 6%;display:flex;justify-con
 
 <!-- NAV -->
 <nav>
-  <div class="brand"><div class="brand-mark">A</div>Aura Applications</div>
+  <a class="brand" href="aura-applications.html"><div class="brand-mark">A</div>Aura Applications</a>
   <div class="nav-links">
-    <a href="#sobre">Sobre</a>
-    <a href="#discord">Discord</a>
-    <a href="#precos">Preços</a>
+    <a href="sobre.html">Sobre</a>
+    <a href="discord.html">Discord</a>
+    <a href="precos.html">Preços</a>
   </div>
   <div class="nav-auth" id="nav-auth">
     <button class="nav-btn-outline" onclick="openModal('modal-login')">Entrar</button>
@@ -378,7 +379,7 @@ footer{border-top:1px solid var(--line);padding:44px 6%;display:flex;justify-con
   <p>Uma nova loja no mercado, desenvolvendo bots de Discord e sites sob medida — com estrutura, suporte e uma identidade só nossa.</p>
   <div class="hero-actions">
     <a href="https://discord.gg/hakxmJHTRs" target="_blank" class="btn-primary">Entrar no Discord</a>
-    <a href="#precos" class="btn-secondary">Ver preços</a>
+    <a href="precos.html" class="btn-secondary">Ver preços</a>
   </div>
 </section>
 

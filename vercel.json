@@ -1,7 +1,10 @@
 {
   "cleanUrls": true,
   "rewrites": [
-    { "source": "/", "destination": "/aura-applications.html" }
+    { "source": "/", "destination": "/aura-applications.html" },
+    { "source": "/sobre", "destination": "/sobre.html" },
+    { "source": "/discord", "destination": "/discord.html" },
+    { "source": "/precos", "destination": "/precos.html" }
   ],
   "headers": [
     {
