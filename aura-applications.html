@@ -405,7 +405,6 @@ footer{border-top:1px solid var(--line);padding:44px 6%;display:flex;justify-con
 </footer>
 
 <script>
-// ===== FIREBASE (import dinâmico) =====
 const DEFAULT_PLANS=[
   {id:1,name:"Básico",price:"0",period:"/mês",desc:"Para quem está começando na comunidade.",features:["Acesso aos canais gerais","Participação em eventos abertos","Suporte padrão"],featured:false,badge:"Mais popular",btnText:"Começar grátis",btnUrl:"#",image:""},
   {id:2,name:"Plus",price:"19",period:"/mês",desc:"O plano mais escolhido pela comunidade.",features:["Tudo do plano Básico","Cargo exclusivo no servidor","Acesso a canais reservados","Suporte prioritário"],featured:true,badge:"Mais popular",btnText:"Assinar Plus",btnUrl:"#",image:""},
@@ -425,12 +424,6 @@ function renderPlansData(plans){
       <a href="javascript:void(0)" class="plan-btn" onclick="openBotModal('${p.name}','${p.btnUrl}')">${p.btnText}</a>
     </div>`).join('');
 }
-
-// Escuta mudanças em tempo real — atualiza para todos os visitantes ao mesmo tempo
-onSnapshot(doc(db,'site','plans'), snap=>{
-  const data = snap.exists() ? snap.data().list : null;
-  renderPlansData(data && data.length ? data : DEFAULT_PLANS);
-});
 
 function getUsers(){try{return JSON.parse(localStorage.getItem('aura_users'))||[];}catch(e){return[];}}
 function saveUsers(u){localStorage.setItem('aura_users',JSON.stringify(u));}
@@ -489,65 +482,41 @@ function switchModal(a,b){closeModal(a);openModal(b);}
 document.querySelectorAll('.modal-overlay').forEach(ov=>ov.addEventListener('click',e=>{if(e.target===ov)closeModal(ov.id);}));
 function showErr(el,msg){el.textContent=msg;el.classList.add('show');}
 
-// BOT MODAL
 let _botPlanName='', _botPlanUrl='#', _selectedBot='';
-
-function openBotModal(planName, planUrl){
-  _botPlanName=planName;
-  _botPlanUrl=planUrl;
-  _selectedBot='';
+function openBotModal(planName,planUrl){
+  _botPlanName=planName;_botPlanUrl=planUrl;_selectedBot='';
   document.getElementById('bot-plan-label').textContent='Plano: '+planName;
   document.querySelectorAll('.bot-card').forEach(c=>c.classList.remove('selected'));
   const btn=document.getElementById('bot-confirm-btn');
-  btn.classList.remove('ready');
-  btn.textContent='Selecione um bot para continuar';
+  btn.classList.remove('ready');btn.textContent='Selecione um bot para continuar';
   openModal('modal-bot');
 }
-
-function selectBot(el, botName){
+function selectBot(el,botName){
   document.querySelectorAll('.bot-card').forEach(c=>c.classList.remove('selected'));
-  el.classList.add('selected');
-  _selectedBot=botName;
+  el.classList.add('selected');_selectedBot=botName;
   const btn=document.getElementById('bot-confirm-btn');
-  btn.classList.add('ready');
-  btn.textContent='Continuar com '+botName+' →';
+  btn.classList.add('ready');btn.textContent='Continuar com '+botName+' →';
 }
-
 function confirmBot(){
   if(!_selectedBot)return;
-  closeModal('modal-bot');
-  openPixModal(_botPlanName, _selectedBot);
+  closeModal('modal-bot');openPixModal(_botPlanName,_selectedBot);
 }
 
-// PIX MODAL
-const PIX_KEY = '55761105870';
-
-function openPixModal(planName, botName){
-  document.getElementById('pix-plan-text').textContent = planName;
-  document.getElementById('pix-bot-text').textContent = botName;
-  document.getElementById('pix-step-plan').textContent = planName;
-  document.getElementById('pix-step-bot').textContent = botName;
-
-  // Gera QR Code via API pública (qr-server)
-  const qrData = encodeURIComponent('Pix: ' + PIX_KEY + ' | Plano: ' + planName + ' | Bot: ' + botName);
-  const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + qrData;
-  document.getElementById('pix-qr-img').src = qrUrl;
-
+const PIX_KEY='55761105870';
+function openPixModal(planName,botName){
+  document.getElementById('pix-plan-text').textContent=planName;
+  document.getElementById('pix-bot-text').textContent=botName;
+  document.getElementById('pix-step-plan').textContent=planName;
+  document.getElementById('pix-step-bot').textContent=botName;
+  const qrData=encodeURIComponent('Pix: '+PIX_KEY+' | Plano: '+planName+' | Bot: '+botName);
+  document.getElementById('pix-qr-img').src='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+qrData;
   openModal('modal-pix');
 }
-
 function copyPixKey(){
-  navigator.clipboard.writeText(PIX_KEY).then(()=>{
-    showToast('Chave Pix copiada!','success');
-  }).catch(()=>{
-    // fallback para navegadores sem clipboard API
-    const el = document.createElement('textarea');
-    el.value = PIX_KEY;
-    document.body.appendChild(el);
-    el.select();
-    document.execCommand('copy');
-    document.body.removeChild(el);
-    showToast('Chave Pix copiada!','success');
+  navigator.clipboard.writeText(PIX_KEY).then(()=>showToast('Chave Pix copiada!','success')).catch(()=>{
+    const el=document.createElement('textarea');el.value=PIX_KEY;
+    document.body.appendChild(el);el.select();document.execCommand('copy');
+    document.body.removeChild(el);showToast('Chave Pix copiada!','success');
   });
 }
 
@@ -558,36 +527,26 @@ function showToast(msg,type){
   clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),3500);
 }
 
-// Expõe funções para os onclick no HTML (necessário com type="module")
-window.doRegister=doRegister;
-window.doLogin=doLogin;
-window.doLogout=doLogout;
-window.openModal=openModal;
-window.closeModal=closeModal;
-window.switchModal=switchModal;
-window.openBotModal=openBotModal;
-window.selectBot=selectBot;
-window.confirmBot=confirmBot;
-window.copyPixKey=copyPixKey;
+// Membros do Discord
+fetch('https://discord.com/api/v10/invites/hakxmJHTRs?with_counts=true')
+  .then(r=>r.ok?r.json():null).then(d=>{
+    if(!d)return;
+    if(typeof d.approximate_presence_count==='number')
+      document.getElementById('online-count').textContent=d.approximate_presence_count.toLocaleString('pt-BR');
+    if(typeof d.approximate_member_count==='number')
+      document.getElementById('total-count').textContent=d.approximate_member_count.toLocaleString('pt-BR');
+  }).catch(()=>{});
 
-(function(){
-  fetch('https://discord.com/api/v10/invites/hakxmJHTRs?with_counts=true')
-    .then(r=>r.ok?r.json():null).then(d=>{
-      if(!d)return;
-      if(typeof d.approximate_presence_count==='number')document.getElementById('online-count').textContent=d.approximate_presence_count.toLocaleString('pt-BR');
-      if(typeof d.approximate_member_count==='number')document.getElementById('total-count').textContent=d.approximate_member_count.toLocaleString('pt-BR');
-    }).catch(()=>{});
-})();
-
-renderPlansData(DEFAULT_PLANS); // fallback visual imediato
+// Renderiza planos padrão imediatamente
+renderPlansData(DEFAULT_PLANS);
 updateNavAuth();
 
-// Inicia Firebase e atualiza planos em tempo real
+// Depois carrega do Firebase (atualiza se houver dados salvos)
 (async function(){
   try{
-    const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
-    const { getFirestore, doc, onSnapshot } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-    const app = initializeApp({
+    const {initializeApp}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+    const {getFirestore,doc,onSnapshot}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    const app=initializeApp({
       apiKey:"AIzaSyCfux94IsnXM2cUxLYN_YrDI2vlhIc1-Yw",
       authDomain:"aura-applications-afd15.firebaseapp.com",
       projectId:"aura-applications-afd15",
@@ -595,12 +554,12 @@ updateNavAuth();
       messagingSenderId:"665233735729",
       appId:"1:665233735729:web:6b781ad6763444c1ad1510"
     });
-    const db = getFirestore(app);
-    onSnapshot(doc(db,'site','plans'), snap=>{
-      const data = snap.exists() ? snap.data().list : null;
-      renderPlansData(data && data.length ? data : DEFAULT_PLANS);
+    const db=getFirestore(app);
+    onSnapshot(doc(db,'site','plans'),snap=>{
+      const data=snap.exists()?snap.data().list:null;
+      renderPlansData(data&&data.length?data:DEFAULT_PLANS);
     });
-  }catch(e){ console.warn('Firebase error',e); }
+  }catch(e){console.warn('Firebase:',e);}
 })();
 </script>
 </body>
