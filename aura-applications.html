@@ -383,51 +383,10 @@ footer{border-top:1px solid var(--line);padding:44px 6%;display:flex;justify-con
   </div>
 </section>
 
-<!-- SOBRE -->
-<section class="section" id="sobre">
-  <div class="tag">sobre nós</div>
-  <h2>Uma nova loja no mercado, feita pra construir.</h2>
-  <p class="lead">A Aura Applications nasceu para desenvolver bots de Discord e sites sob medida. Somos novos no mercado, mas levamos cada projeto a sério — do primeiro contato até a entrega final.</p>
-  <div class="about-grid">
-    <div class="about-card">
-      <div class="num">01</div>
-      <h3>Bots de Discord</h3>
-      <p>Desenvolvimento de bots personalizados para servidores, moderação, automações e funcionalidades sob medida.</p>
-    </div>
-    <div class="about-card">
-      <div class="num">02</div>
-      <h3>Sites</h3>
-      <p>Criação de sites com identidade própria, pensados para representar bem o seu projeto ou negócio.</p>
-    </div>
-    <div class="about-card">
-      <div class="num">03</div>
-      <h3>Fundada por Atuma e b7</h3>
-      <p>A loja foi criada e é conduzida por Atuma e b7, responsáveis pelo desenvolvimento e pela comunidade.</p>
-    </div>
-  </div>
-</section>
-
-<!-- DISCORD -->
-<section class="section" id="discord">
-  <div class="discord-banner">
-    <div class="tag">entre para a comunidade</div>
-    <h2>O Discord da Aura Applications está te esperando.</h2>
-    <p>Junte-se ao servidor para acompanhar novidades, tirar dúvidas e fazer parte do dia a dia da comunidade.</p>
-    <div class="member-pills">
-      <span><strong id="online-count">—</strong> membros online</span>
-      <span><strong id="total-count">—</strong> membros totais</span>
-      <span><strong>24/7</strong> equipe ativa</span>
-    </div>
-    <a href="https://discord.gg/hakxmJHTRs" target="_blank" class="discord-btn">Entrar no servidor →</a>
-  </div>
-</section>
-
-<!-- PREÇOS -->
-<section class="section" id="precos">
-  <div class="tag">planos</div>
-  <h2>Escolha o plano ideal para você.</h2>
-  <p class="lead">Confira os planos disponíveis e escolha o que melhor atende às suas necessidades.</p>
-  <div class="pricing-grid" id="pricing-grid"></div>
+<footer>
+  <div class="brand"><div class="brand-mark">A</div>Aura Applications</div>
+  <div>© 2026 Aura Applications — todos os direitos reservados</div>
+</footer>
 </section>
 
 <footer>
@@ -436,29 +395,6 @@ footer{border-top:1px solid var(--line);padding:44px 6%;display:flex;justify-con
 </footer>
 
 <script>
-const DEFAULT_PLANS=[
-  {id:1,name:"Básico",price:"0",period:"/mês",desc:"Para quem está começando na comunidade.",features:["Acesso aos canais gerais","Participação em eventos abertos","Suporte padrão"],featured:false,badge:"Mais popular",btnText:"Começar grátis",btnUrl:"#",image:""},
-  {id:2,name:"Plus",price:"19",period:"/mês",desc:"O plano mais escolhido pela comunidade.",features:["Tudo do plano Básico","Cargo exclusivo no servidor","Acesso a canais reservados","Suporte prioritário"],featured:true,badge:"Mais popular",btnText:"Assinar Plus",btnUrl:"#",image:""},
-  {id:3,name:"Pro",price:"49",period:"/mês",desc:"Para quem quer o máximo da Aura.",features:["Tudo do plano Plus","Acesso antecipado a novidades","Benefícios personalizados","Contato direto com a equipe"],featured:false,badge:"Mais popular",btnText:"Assinar Pro",btnUrl:"#",image:""}
-];
-
-let _currentPlans = [...DEFAULT_PLANS];
-
-function renderPlansData(plans){
-  _currentPlans = plans;
-  const grid=document.getElementById('pricing-grid');
-  if(!grid)return;
-  grid.innerHTML=plans.map(p=>`
-    <div class="plan${p.featured?' featured':''}"${p.featured?` data-badge="${p.badge}"`:''}">
-      ${p.image?`<img class="plan-image visible" src="${p.image}" alt="${p.name}">`:''}
-      <div class="plan-name">${p.name}</div>
-      <div class="plan-price">R$ ${p.price}<span>${p.period}</span></div>
-      <div class="plan-desc">${p.desc}</div>
-      <ul class="plan-features">${p.features.map(f=>`<li>${f}</li>`).join('')}</ul>
-      <a href="javascript:void(0)" class="plan-btn" onclick="openBotModal('${p.name}','${p.btnUrl}')">${p.btnText}</a>
-    </div>`).join('');
-}
-
 function getUsers(){try{return JSON.parse(localStorage.getItem('aura_users'))||[];}catch(e){return[];}}
 function saveUsers(u){localStorage.setItem('aura_users',JSON.stringify(u));}
 function getSession(){try{return JSON.parse(localStorage.getItem('aura_session'));}catch(e){return null;}}
@@ -516,65 +452,6 @@ function switchModal(a,b){closeModal(a);openModal(b);}
 document.querySelectorAll('.modal-overlay').forEach(ov=>ov.addEventListener('click',e=>{if(e.target===ov)closeModal(ov.id);}));
 function showErr(el,msg){el.textContent=msg;el.classList.add('show');}
 
-let _botPlanName='', _botPlanUrl='#', _selectedBot='';
-function openBotModal(planName,planUrl){
-  _botPlanName=planName;_botPlanUrl=planUrl;_selectedBot='';
-  document.getElementById('bot-plan-label').textContent='Plano: '+planName;
-  document.querySelectorAll('.bot-card').forEach(c=>c.classList.remove('selected'));
-  const btn=document.getElementById('bot-confirm-btn');
-  btn.classList.remove('ready');btn.textContent='Selecione um bot para continuar';
-  openModal('modal-bot');
-}
-function selectBot(el,botName){
-  document.querySelectorAll('.bot-card').forEach(c=>c.classList.remove('selected'));
-  el.classList.add('selected');_selectedBot=botName;
-  const btn=document.getElementById('bot-confirm-btn');
-  btn.classList.add('ready');btn.textContent='Continuar com '+botName+' →';
-}
-const BOT_LINKS = {
-  'AntiRaid':    'https://discord.com/oauth2/authorize?client_id=1519767841648414891&permissions=8&integration_type=0&scope=applications.commands+bot',
-  'Vendas':      'https://discord.com/oauth2/authorize?client_id=1502078647165522011&permissions=8&integration_type=0&scope=bot+applications.commands',
-  'Tickets':     'https://discord.com/oauth2/authorize?client_id=1511541268126367776&permissions=8&integration_type=0&scope=bot+applications.commands',
-  'Ranked':      'https://discord.com/oauth2/authorize?client_id=1510798098568445952&permissions=8&integration_type=0&scope=bot+applications.commands',
-  'Simulators':  'https://discord.com/oauth2/authorize?client_id=1505674324793757850&permissions=8&integration_type=0&scope=bot+applications.commands',
-  'Embeds':      'https://discord.com/oauth2/authorize?client_id=1517354385334603847&permissions=8&integration_type=0&scope=bot+applications.commands'
-};
-
-function confirmBot(){
-  if(!_selectedBot)return;
-  closeModal('modal-bot');
-
-  // Detecta se é plano gratuito pelo preço = 0
-  const plan = _currentPlans.find(p=>p.name===_botPlanName);
-  const isFree = plan && (String(plan.price)==='0' || plan.price===0);
-
-  if(isFree && BOT_LINKS[_selectedBot]){
-    document.getElementById('addbot-name-display').textContent = _selectedBot;
-    document.getElementById('addbot-link').href = BOT_LINKS[_selectedBot];
-    openModal('modal-addbot');
-  } else {
-    openPixModal(_botPlanName, _selectedBot);
-  }
-}
-
-const PIX_KEY='55761105870';
-function openPixModal(planName,botName){
-  document.getElementById('pix-plan-text').textContent=planName;
-  document.getElementById('pix-bot-text').textContent=botName;
-  document.getElementById('pix-step-plan').textContent=planName;
-  document.getElementById('pix-step-bot').textContent=botName;
-  const qrData=encodeURIComponent('Pix: '+PIX_KEY+' | Plano: '+planName+' | Bot: '+botName);
-  document.getElementById('pix-qr-img').src='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+qrData;
-  openModal('modal-pix');
-}
-function copyPixKey(){
-  navigator.clipboard.writeText(PIX_KEY).then(()=>showToast('Chave Pix copiada!','success')).catch(()=>{
-    const el=document.createElement('textarea');el.value=PIX_KEY;
-    document.body.appendChild(el);el.select();document.execCommand('copy');
-    document.body.removeChild(el);showToast('Chave Pix copiada!','success');
-  });
-}
-
 let toastTimer;
 function showToast(msg,type){
   const t=document.getElementById('toast');
@@ -582,40 +459,7 @@ function showToast(msg,type){
   clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),3500);
 }
 
-// Membros do Discord
-fetch('https://discord.com/api/v10/invites/hakxmJHTRs?with_counts=true')
-  .then(r=>r.ok?r.json():null).then(d=>{
-    if(!d)return;
-    if(typeof d.approximate_presence_count==='number')
-      document.getElementById('online-count').textContent=d.approximate_presence_count.toLocaleString('pt-BR');
-    if(typeof d.approximate_member_count==='number')
-      document.getElementById('total-count').textContent=d.approximate_member_count.toLocaleString('pt-BR');
-  }).catch(()=>{});
-
-// Renderiza planos padrão imediatamente
-renderPlansData(DEFAULT_PLANS);
 updateNavAuth();
-
-// Depois carrega do Firebase (atualiza se houver dados salvos)
-(async function(){
-  try{
-    const {initializeApp}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
-    const {getFirestore,doc,onSnapshot}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-    const app=initializeApp({
-      apiKey:"AIzaSyCfux94IsnXM2cUxLYN_YrDI2vlhIc1-Yw",
-      authDomain:"aura-applications-afd15.firebaseapp.com",
-      projectId:"aura-applications-afd15",
-      storageBucket:"aura-applications-afd15.firebasestorage.app",
-      messagingSenderId:"665233735729",
-      appId:"1:665233735729:web:6b781ad6763444c1ad1510"
-    });
-    const db=getFirestore(app);
-    onSnapshot(doc(db,'site','plans'),snap=>{
-      const data=snap.exists()?snap.data().list:null;
-      renderPlansData(data&&data.length?data:DEFAULT_PLANS);
-    });
-  }catch(e){console.warn('Firebase:',e);}
-})();
 </script>
 </body>
 </html>
