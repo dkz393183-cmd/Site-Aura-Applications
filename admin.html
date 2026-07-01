@@ -211,6 +211,15 @@ a{color:inherit;text-decoration:none;}
 .toast.success{border-color:var(--cyan);}
 .toast.error{border-color:#f87171;}
 
+/* ONLINE INDICATOR */
+.online-indicator{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-dim);}
+.online-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;box-shadow:0 0 6px #22c55e;animation:blink 2s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.4;}}
+.status-online{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:#22c55e;font-weight:600;}
+.status-online::before{content:'';width:7px;height:7px;border-radius:50%;background:#22c55e;display:inline-block;}
+.status-offline{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--ink-dim);}
+.status-offline::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--ink-dim);display:inline-block;opacity:.4;}
+
 @media(max-width:640px){.plan-grid{grid-template-columns:1fr;}}
 </style>
 
@@ -270,16 +279,21 @@ a{color:inherit;text-decoration:none;}
     <!-- TAB: USUÁRIOS -->
     <div class="tab-content" id="tab-users">
       <div class="plans-header">
-        <h2>Usuários cadastrados</h2>
+        <h2>Usuários</h2>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <div class="online-indicator"><span class="online-dot"></span><span id="online-count-label">0 online agora</span></div>
+        </div>
       </div>
       <div style="overflow-x:auto;">
         <table class="users-table" id="users-table">
           <thead>
             <tr>
               <th>#</th>
+              <th>Status</th>
               <th>Nome</th>
               <th>E-mail</th>
               <th>Cadastrado em</th>
+              <th>Último login</th>
               <th>Ações</th>
             </tr>
           </thead>
@@ -318,13 +332,14 @@ const DEFAULT_PLANS = [
 
 let _plans = JSON.parse(JSON.stringify(DEFAULT_PLANS));
 let _db = null, _plansRef = null;
+let _fbUsers = [], _fbSessions = [];
 let nextId = Date.now();
 let toastTimer;
 
 // Inicializa Firebase via import dinâmico
 async function initFirebase(){
   const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
-  const { getFirestore, doc, getDoc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+  const { getFirestore, doc, getDoc, setDoc, collection, onSnapshot, deleteDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
   const app = initializeApp({
     apiKey:"AIzaSyCfux94IsnXM2cUxLYN_YrDI2vlhIc1-Yw",
     authDomain:"aura-applications-afd15.firebaseapp.com",
@@ -337,6 +352,20 @@ async function initFirebase(){
   _plansRef = doc(_db,'site','plans');
   window._fbGetDoc = getDoc;
   window._fbSetDoc = setDoc;
+  window._fbDeleteDoc = deleteDoc;
+  window._fbCollection = collection;
+
+  // Escuta usuários em tempo real
+  onSnapshot(collection(_db,'users'), snap=>{
+    _fbUsers = snap.docs.map(d=>({id:d.id,...d.data()}));
+    if(document.getElementById('tab-users').classList.contains('active')) renderUsers();
+  });
+
+  // Escuta sessões ativas em tempo real
+  onSnapshot(collection(_db,'sessions'), snap=>{
+    _fbSessions = snap.docs.map(d=>({id:d.id,...d.data()}));
+    if(document.getElementById('tab-users').classList.contains('active')) renderUsers();
+  });
 }
 
 // ===== AUTH =====
@@ -472,15 +501,33 @@ function renderPlanCards(){
 function getUsers(){ try{return JSON.parse(localStorage.getItem('aura_users'))||[];}catch(e){return[];} }
 
 function renderUsers(){
-  const users=getUsers();
   const tbody=document.getElementById('users-tbody');
-  if(!users.length){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--ink-dim);padding:32px;">Nenhum usuário cadastrado ainda.</td></tr>';return;}
-  tbody.innerHTML=users.map((u,i)=>`<tr>
-    <td style="color:var(--ink-dim);font-size:13px;">${i+1}</td>
-    <td>${u.name}</td><td style="color:var(--ink-dim);">${u.email}</td>
-    <td style="color:var(--ink-dim);font-size:13px;">${u.createdAt?new Date(u.createdAt).toLocaleDateString('pt-BR'):'-'}</td>
-    <td><button class="btn-sm danger" onclick="deleteUser('${u.email}')">Excluir</button></td>
-  </tr>`).join('');
+  const users = _fbUsers.length ? _fbUsers : getUsers();
+  const onlineEmails = new Set(_fbSessions.map(s=>s.email));
+  const onlineCount = onlineEmails.size;
+
+  const lbl = document.getElementById('online-count-label');
+  if(lbl) lbl.textContent = onlineCount + (onlineCount===1?' online agora':' online agora');
+
+  if(!users.length){
+    tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--ink-dim);padding:32px;">Nenhum usuário cadastrado ainda.</td></tr>';
+    return;
+  }
+  tbody.innerHTML=users.map((u,i)=>{
+    const isOnline = onlineEmails.has(u.email);
+    const lastSeen = isOnline ? 'Agora' : (u.lastLogin ? new Date(u.lastLogin).toLocaleString('pt-BR') : '—');
+    return `<tr>
+      <td style="color:var(--ink-dim);font-size:13px;">${i+1}</td>
+      <td>${isOnline
+        ? '<span class="status-online">Online</span>'
+        : '<span class="status-offline">Offline</span>'}</td>
+      <td><strong>${u.name}</strong></td>
+      <td style="color:var(--ink-dim);">${u.email}</td>
+      <td style="color:var(--ink-dim);font-size:13px;">${u.createdAt?new Date(u.createdAt).toLocaleDateString('pt-BR'):'-'}</td>
+      <td style="color:var(--ink-dim);font-size:13px;">${lastSeen}</td>
+      <td><button class="btn-sm danger" onclick="deleteUser('${u.email}')">Excluir</button></td>
+    </tr>`;
+  }).join('');
 }
 
 function deleteUser(email){
@@ -489,6 +536,7 @@ function deleteUser(email){
   renderUsers();
   showToast('Usuário excluído.','success');
 }
+window.deleteUser = deleteUser;
 
 // ===== TABS =====
 function switchTab(name){

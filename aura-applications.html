@@ -426,6 +426,7 @@ function doRegister(){
   saveUsers(users);setSession({name,email});
   closeModal('modal-register');updateNavAuth();
   showToast('Conta criada! Bem-vindo(a), '+name+'.','success');
+  syncLoginToFirebase(name,email);
 }
 
 function doLogin(){
@@ -438,9 +439,10 @@ function doLogin(){
   setSession({name:user.name,email:user.email});
   closeModal('modal-login');updateNavAuth();
   showToast('Bem-vindo(a) de volta, '+user.name+'!','success');
+  syncLoginToFirebase(user.name,user.email);
 }
 
-function doLogout(){clearSession();updateNavAuth();showToast('Você saiu da sua conta.','success');}
+function doLogout(){clearSession();syncLogoutToFirebase();updateNavAuth();showToast('Você saiu da sua conta.','success');}
 
 function openModal(id){document.getElementById(id).classList.add('open');document.body.style.overflow='hidden';}
 function closeModal(id){
@@ -459,7 +461,13 @@ function showToast(msg,type){
   clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),3500);
 }
 
+// Firebase sync
+async function syncLoginToFirebase(name,email){try{const sid=sessionStorage.getItem('aura_sid')||(()=>{const id=Math.random().toString(36).slice(2);sessionStorage.setItem('aura_sid',id);return id;})();const base='https://firestore.googleapis.com/v1/projects/aura-applications-afd15/databases/(default)/documents';const key='?key=AIzaSyCfux94IsnXM2cUxLYN_YrDI2vlhIc1-Yw';const uid=btoa(email).replace(/=/g,'');await fetch(`${base}/users/${uid}${key}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:{name:{stringValue:name},email:{stringValue:email},lastLogin:{stringValue:new Date().toISOString()}}})});await fetch(`${base}/sessions/${sid}${key}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:{name:{stringValue:name},email:{stringValue:email},loginAt:{stringValue:new Date().toISOString()}}})});}catch(e){console.warn('sync login:',e);}}
+async function syncLogoutToFirebase(){try{const sid=sessionStorage.getItem('aura_sid');if(!sid)return;await fetch(`https://firestore.googleapis.com/v1/projects/aura-applications-afd15/databases/(default)/documents/sessions/${sid}?key=AIzaSyCfux94IsnXM2cUxLYN_YrDI2vlhIc1-Yw`,{method:'DELETE'});sessionStorage.removeItem('aura_sid');}catch(e){console.warn('sync logout:',e);}}
+window.addEventListener('beforeunload',()=>syncLogoutToFirebase());
+
 updateNavAuth();
+(function(){const s=getSession();if(s)syncLoginToFirebase(s.name,s.email);})();
 </script>
 </body>
 </html>
