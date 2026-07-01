@@ -193,6 +193,22 @@ footer{border-top:1px solid var(--line);padding:44px 6%;display:flex;justify-con
 }
 .btn-discord:hover{opacity:.85;}
 @media(max-width:600px){.bot-grid{grid-template-columns:repeat(2,1fr);}}
+/* ADD BOT MODAL (plano gratuito) */
+.modal-addbot{max-width:420px;text-align:center;}
+.addbot-tag{
+  display:inline-block;font-size:11px;font-family:'JetBrains Mono',monospace;
+  color:var(--cyan);background:rgba(34,211,238,.1);
+  border:1px solid rgba(34,211,238,.3);padding:4px 12px;
+  border-radius:999px;margin-bottom:16px;text-transform:uppercase;letter-spacing:.08em;
+}
+.btn-addbot{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:100%;padding:14px;border-radius:10px;
+  background:linear-gradient(135deg,var(--violet),#6d3fd6);
+  color:var(--ink);font-weight:600;font-size:15px;
+  text-decoration:none;transition:opacity .2s;
+}
+.btn-addbot:hover{opacity:.9;}
 @media(max-width:860px){.about-grid{grid-template-columns:1fr;}.pricing-grid{grid-template-columns:1fr;}.nav-links{display:none;}}
 @media(prefers-reduced-motion:reduce){.aura-glow{animation:none;}}
 </style>
@@ -323,6 +339,20 @@ footer{border-top:1px solid var(--line);padding:44px 6%;display:flex;justify-con
   </div>
 </div>
 
+<!-- MODAL ADD BOT GRATUITO -->
+<div class="modal-overlay" id="modal-addbot">
+  <div class="modal modal-addbot">
+    <button class="modal-close" onclick="closeModal('modal-addbot')">×</button>
+    <div class="addbot-tag">Plano Gratuito</div>
+    <h2>Adicionar bot ao servidor</h2>
+    <p class="sub" style="margin-bottom:24px;">Clique no botão abaixo para adicionar o bot <strong id="addbot-name-display">—</strong> diretamente ao seu servidor Discord.</p>
+    <a id="addbot-link" href="#" target="_blank" class="btn-addbot">
+      Adicionar bot ao Discord →
+    </a>
+    <p style="margin-top:16px;font-size:12px;color:var(--ink-dim);text-align:center;">Você será redirecionado para a página de autorização do Discord.</p>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <!-- NAV -->
@@ -411,7 +441,10 @@ const DEFAULT_PLANS=[
   {id:3,name:"Pro",price:"49",period:"/mês",desc:"Para quem quer o máximo da Aura.",features:["Tudo do plano Plus","Acesso antecipado a novidades","Benefícios personalizados","Contato direto com a equipe"],featured:false,badge:"Mais popular",btnText:"Assinar Pro",btnUrl:"#",image:""}
 ];
 
+let _currentPlans = [...DEFAULT_PLANS];
+
 function renderPlansData(plans){
+  _currentPlans = plans;
   const grid=document.getElementById('pricing-grid');
   if(!grid)return;
   grid.innerHTML=plans.map(p=>`
@@ -497,9 +530,30 @@ function selectBot(el,botName){
   const btn=document.getElementById('bot-confirm-btn');
   btn.classList.add('ready');btn.textContent='Continuar com '+botName+' →';
 }
+const BOT_LINKS = {
+  'AntiRaid':    'https://discord.com/oauth2/authorize?client_id=1519767841648414891&permissions=8&integration_type=0&scope=applications.commands+bot',
+  'Vendas':      'https://discord.com/oauth2/authorize?client_id=1502078647165522011&permissions=8&integration_type=0&scope=bot+applications.commands',
+  'Tickets':     'https://discord.com/oauth2/authorize?client_id=1511541268126367776&permissions=8&integration_type=0&scope=bot+applications.commands',
+  'Ranked':      'https://discord.com/oauth2/authorize?client_id=1510798098568445952&permissions=8&integration_type=0&scope=bot+applications.commands',
+  'Simulators':  'https://discord.com/oauth2/authorize?client_id=1505674324793757850&permissions=8&integration_type=0&scope=bot+applications.commands',
+  'Embeds':      'https://discord.com/oauth2/authorize?client_id=1517354385334603847&permissions=8&integration_type=0&scope=bot+applications.commands'
+};
+
 function confirmBot(){
   if(!_selectedBot)return;
-  closeModal('modal-bot');openPixModal(_botPlanName,_selectedBot);
+  closeModal('modal-bot');
+
+  // Detecta se é plano gratuito pelo preço = 0
+  const plan = _currentPlans.find(p=>p.name===_botPlanName);
+  const isFree = plan && (String(plan.price)==='0' || plan.price===0);
+
+  if(isFree && BOT_LINKS[_selectedBot]){
+    document.getElementById('addbot-name-display').textContent = _selectedBot;
+    document.getElementById('addbot-link').href = BOT_LINKS[_selectedBot];
+    openModal('modal-addbot');
+  } else {
+    openPixModal(_botPlanName, _selectedBot);
+  }
 }
 
 const PIX_KEY='55761105870';
